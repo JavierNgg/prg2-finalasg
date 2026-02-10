@@ -386,7 +386,10 @@ static void ListOrders(List<Order> allOrders)
         Console.Clear();
         Console.WriteLine("All Orders\n");
 
-        Console.WriteLine($"{"ID",-8} {"Customer",-15} {"Restaurant",-15} {"Delivery",-18} {"Amount",-10} {"Status",-10}");
+        Console.WriteLine(
+            $"{"Order ID",-10}{"Customer",-15}{"Restaurant",-15}{"Delivery Date/Time",-20}{"Amount",-10}{"Status",-12}"
+        );
+
         Console.WriteLine(new string('-', 80));
 
         // Prints basic order details
