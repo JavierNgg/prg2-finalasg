@@ -1,7 +1,7 @@
 ﻿//==========================================================
-// Student Number : S10271009C
-// Student Name : Axel Tee Yu Le
-// Partner Name : Javier Ng Zhe Wei
+// Student Number : S10272509G
+// Student Name : Javier Ng Zhe Wei
+// Partner Name : Axel Tee Yu Le
 //==========================================================
 
 using System;
@@ -112,3 +112,4 @@ namespace S10271009C_PRG2Assignment
         }
     }
 }
+
