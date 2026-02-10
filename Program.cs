@@ -577,6 +577,242 @@ static void ShowTotals(List<Restaurant> restaurants)
 
 }
 
+// ==========================================================
+// FEATURE 1 — List all restaurants and menu items
+// ==========================================================
+static void ListRestaurants(List<Restaurant> restaurants)
+{
+    try
+    {
+        Console.Clear();
+        Console.WriteLine("All Restaurants and Menu Items");
+        Console.WriteLine("==============================");
+
+        foreach (Restaurant r in restaurants)
+            r.DisplayMenu();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Error listing restaurants: " + ex.Message);
+    }
+}
+
+
+
+// ==========================================================
+// FEATURE 4 — Process an order (Confirm/Reject/Skip/Deliver)
+// ==========================================================
+static void ProcessOrder(List<Restaurant> restaurants, Stack<Order> refundStack)
+{
+    Console.WriteLine("\nProcess Order");
+    Console.WriteLine("=============");
+    Console.Write("Enter a restaurant ID: ");
+    string restaurantid = Console.ReadLine()?.Trim();
+
+    Restaurant r = restaurants.FirstOrDefault(x => x.restaurantId == restaurantid);
+    if (r == null)
+    {
+        Console.WriteLine("Restaurant not found.");
+        return;
+    }
+
+    if (r.orders.Count == 0)
+    {
+        Console.WriteLine("No orders for this restaurant.");
+        return;
+    }
+
+    int queueSize = r.orders.Count; // IMPORTANT: fixed size for one full pass
+
+    for (int i = 0; i < queueSize; i++)
+    {
+        Order order = r.orders.Dequeue(); // take one order out
+
+        Console.WriteLine($"\nOrder {order.orderId}:");
+        Console.WriteLine($"Customer: {order.customer.customerName}");
+        Console.WriteLine("Ordered Items:");
+
+        int count = 0;
+        foreach (OrderedFoodItem item in order.orderedFoodItems)
+        {
+            count++;
+            Console.WriteLine($"{count}. {item.itemName} - {item.qtyOrdered}");
+        }
+
+        Console.WriteLine($"Delivery date/time: {order.deliveryDateTime:dd/MM/yyyy HH:mm}");
+        Console.WriteLine($"Total Amount: ${order.orderTotal:F2}");
+        Console.WriteLine($"Order Status: {order.orderStatus}");
+
+        bool archiveThisOrder = false; // archive = remove from active queue
+
+        while (true)
+        {
+            Console.Write("\n[C]onfirm / [R]eject / [S]kip / [D]eliver: ");
+            string choice = Console.ReadLine()?.Trim().ToUpper();
+
+            if (choice == "C")
+            {
+                if (order.orderStatus == "Pending")
+                {
+                    order.orderStatus = "Preparing";
+                    Console.WriteLine($"Order {order.orderId} confirmed. Status: {order.orderStatus}");
+                    break;
+                }
+                Console.WriteLine("Order is not Pending. Failed to confirm.");
+            }
+            else if (choice == "R")
+            {
+                if (order.orderStatus == "Pending")
+                {
+                    order.orderStatus = "Rejected";
+                    refundStack.Push(order);     // refund stack
+                    archiveThisOrder = true;     // ARCHIVE (diagram)
+                    Console.WriteLine($"Order {order.orderId} rejected. Added to refund stack and archived.");
+                    break;
+                }
+                Console.WriteLine("Order is not Pending. Failed to reject.");
+            }
+            else if (choice == "D")
+            {
+                if (order.orderStatus == "Preparing")
+                {
+                    order.orderStatus = "Delivered";
+                    archiveThisOrder = true;     // ARCHIVE (diagram)
+                    Console.WriteLine($"Order {order.orderId} delivered. Archived.");
+                    break;
+                }
+                Console.WriteLine("Order is not Preparing. Failed to deliver.");
+            }
+            else if (choice == "S")
+            {
+                Console.WriteLine($"Order {order.orderId} skipped.");
+                break;
+            }
+            else
+            {
+                Console.WriteLine("Invalid choice.");
+            }
+        }
+
+        // If not archived, put it back into the queue (still active)
+        if (!archiveThisOrder)
+        {
+            r.orders.Enqueue(order);
+        }
+    }
+}
+
+
+
+// ==========================================================
+// FEATURE 6 — Delete (Cancel) an existing order (Pending only)
+// ==========================================================
+static void DeleteOrder(List<Customer> customers, Stack<Order> refundStack)
+{
+    Console.WriteLine("\nDelete Order");
+    Console.WriteLine("============");
+
+    try
+    {
+        Console.Write("Enter Customer Email: ");
+        string email = Console.ReadLine()?.Trim();
+        Customer c = customers.FirstOrDefault(x => x.emailAddress == email);
+
+        if (c == null)
+        {
+            Console.WriteLine("Customer not found!");
+            return;
+        }
+
+        var pendingOrders = c.orders.Where(o => o.orderStatus == "Pending").ToList();
+        if (pendingOrders.Count == 0)
+        {
+            Console.WriteLine("No pending orders found.");
+            return;
+        }
+
+        Console.WriteLine("Pending Orders:");
+        foreach (var o in pendingOrders) Console.WriteLine(o.orderId);
+
+        Console.Write("Enter Order ID: ");
+        if (!int.TryParse(Console.ReadLine(), out int orderId))
+        {
+            Console.WriteLine("Invalid Order ID.");
+            return;
+        }
+
+        Order selectorder = pendingOrders.FirstOrDefault(x => x.orderId == orderId);
+        if (selectorder == null)
+        {
+            Console.WriteLine("Order not found or not pending.");
+            return;
+        }
+
+        Console.WriteLine($"\nOrder {selectorder.orderId} details:");
+        selectorder.DisplayOrderedFoodItems();
+        Console.WriteLine($"Delivery: {selectorder.deliveryDateTime:dd/MM/yyyy HH:mm}");
+        Console.WriteLine($"Total   : ${selectorder.orderTotal:F2}");
+
+        Console.Write("Confirm cancellation? [Y/N]: ");
+        string choice = Console.ReadLine()?.Trim().ToUpper();
+
+        if (choice == "Y")
+        {
+            selectorder.orderStatus = "Cancelled";
+            refundStack.Push(selectorder);
+            Console.WriteLine($"Order {selectorder.orderId} cancelled. Added to refund stack.");
+        }
+        else
+        {
+            Console.WriteLine("Cancellation aborted.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Error deleting order: " + ex.Message);
+    }
+}
+
+
+// ==========================================================
+// FEATURE 8 — Display total order amount (Advanced)
+// ==========================================================
+static void ShowTotals(List<Restaurant> restaurants)
+{
+    double gruberooTotal = 0;
+    double gruberooRefund = 0;
+
+    foreach (Restaurant restaurant in restaurants)
+    {
+        double restaurantTotal = 0;
+        double restaurantRefund = 0;
+
+        foreach (Order order in restaurant.orders)
+        {
+            if (order.orderStatus == "Delivered")
+            {
+                restaurantTotal += order.CalculateOrderTotal();
+            }
+            else if (order.orderStatus == "Rejected" || order.orderStatus == "Cancelled")
+            {
+                restaurantRefund += order.CalculateOrderTotal();
+            }
+        }
+
+        gruberooTotal += restaurantTotal;
+        gruberooRefund += restaurantRefund;
+
+        Console.WriteLine($"\n=== {restaurant.restaurantName} ({restaurant.restaurantId}) ===");
+        Console.WriteLine($"Total Order Amount : {restaurantTotal:F2}");
+        Console.WriteLine($"Total Refund Amount: {restaurantRefund:F2}");
+    }
+
+    Console.WriteLine("\nGruberoo Company Overview:");
+    Console.WriteLine($"Total Order Amount : {gruberooTotal:F2}");
+    Console.WriteLine($"Total Refund Amount: {gruberooRefund:F2}");
+    Console.WriteLine($"Final Amount Earned: {gruberooTotal - gruberooRefund:F2}");
+}
+
 Console.WriteLine("Welcome to the Gruberoo Food Delivery System\n");
 
 LoadRestaurants(restaurants);
@@ -594,7 +830,7 @@ while (!exit)
 
         if (choice == "1")
         {
-            //ListRestaurants();
+            ListRestaurants();
         }
         else if (choice == "2")
         {
@@ -606,7 +842,7 @@ while (!exit)
         }
         else if (choice == "4")
         {
-            //ProcessOrder();
+            ProcessOrder();
         }
         else if (choice == "5")
         {
@@ -618,7 +854,7 @@ while (!exit)
         }
         else if (choice == "7")
         {
-            //BulkProcess();
+            BulkProcess();
         }
         else if (choice == "8")
         {
@@ -640,3 +876,4 @@ while (!exit)
         Console.WriteLine("System Error: " + ex.Message);
     }
 }
+
