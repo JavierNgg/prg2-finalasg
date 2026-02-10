@@ -687,7 +687,11 @@ static void ModifyOrder(List<Customer> customers)
     }
 
     Console.WriteLine("\nUpdated Order Details:");
+    Console.WriteLine("Order Items:");
     selectedorder.DisplayOrderedFoodItems();
+    Console.WriteLine("Address:");
+    Console.WriteLine(selectedorder.deliveryAddress);
+    Console.WriteLine("Delivery Date/Time:");
     Console.WriteLine(selectedorder.deliveryAddress);
     Console.WriteLine(selectedorder.deliveryDateTime.ToShortTimeString());
 }
