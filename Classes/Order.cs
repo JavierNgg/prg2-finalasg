@@ -26,6 +26,8 @@ namespace S10271009C_PRG2Assignment
         public List<OrderedFoodItem> orderedFoodItems { get; set; }
         public Customer customer { get; set; }
         public Restaurant restaurant { get; set; }
+        public SpecialOffer appliedOffer { get; set; }  // optional
+        public string specialRequest { get; set; }
         public Order() { }
 
         // Constructor for new orders

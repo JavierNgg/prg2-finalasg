@@ -24,5 +24,9 @@ namespace S10271009C_PRG2Assignment
             this.offerDesc = offerDesc;
             this.discount = discount;
         }
+        public override string ToString()
+        {
+            return $"{offerCode} - {offerDesc} ({discount}%)";
+        }
     }
 }

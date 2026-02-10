@@ -21,7 +21,7 @@ namespace S10271009C_PRG2Assignment
         public OrderedFoodItem(FoodItem foodItem, int qtyOrdered) : base(foodItem.itemName, foodItem.itemDesc, foodItem.itemPrice)
         {
             this.qtyOrdered = qtyOrdered;
-            this.customise = customise;
+            this.customise = "";
             this.subTotal = CalculateSubtotal(); ;
         }
 
